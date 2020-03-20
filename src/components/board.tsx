@@ -33,7 +33,7 @@ const TetrisBoard: React.FC<TetrisBoardProps> = (props) => {
       </div>
 
       {/* Game board */}
-      <div className="tetris-board__board">{rows}</div>
+      <div id="tetris-board__board" className="tetris-board__board">{rows}</div>
     </div>
   )
 }

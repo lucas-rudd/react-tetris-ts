@@ -112,6 +112,18 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     document.addEventListener("keyup", keyUp, true);
   }
 
+  setControlsWidth() {
+    let board = document.getElementById("tetris-board__board");
+    let controls = document.getElementById("tetris__game-controls");
+    console.log("BOARD", board);
+    console.log("CONTROLS", controls);
+    if (board && controls) {
+      const style = window.getComputedStyle(board);
+      const wdt = style.getPropertyValue("width");
+      controls.style.width = wdt;
+    }
+  }
+
   /**
    * @description Sets timer after component mounts
    * Uses level (this.state.level) to determine the interval (game speed)
@@ -119,6 +131,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
    * @memberof Tetris
    */
   componentDidMount() {
+    this.setControlsWidth();
     let timerId;
     timerId = window.setInterval(
       () => this.handleBoardUpdate("down"),
@@ -255,8 +268,6 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
           })
         );
       }
-      console.log("NEW LOCATION", newLocation);
-      //TODO: Manage state in only one location (here) instead of also in the `moveY` method
       this.setState(newLocation);
     }
   }
@@ -310,7 +321,6 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     };
   };
 
-  //TODO: return type of tetromino position to manage state in only one location
   moveY = ({
     yAdd,
     field,
@@ -594,39 +604,13 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
           level={this.state.level}
           rotate={this.state.tileRotate}
         />
-        <div className="tetris__block-controls">
-          <button
-            className="btn"
-            onClick={() => this.handleBoardUpdate("left")}
-          >
-            Left
+        <div id="tetris__game-controls" className="tetris__game-controls">
+          <button className="btn" onClick={() => this.handleNewGameClick()}>
+            New Game
           </button>
-          <button
-            className="btn"
-            onClick={() => this.handleBoardUpdate("down")}
-          >
-            Down
+          <button className="btn" onClick={() => this.handlePauseClick()}>
+            {this.state.isPaused ? "Resume" : "Pause"}
           </button>
-          <button
-            className="btn"
-            onClick={() => this.handleBoardUpdate("right")}
-          >
-            Right
-          </button>
-          <button
-            className="btn"
-            onClick={() => this.handleBoardUpdate("rotate")}
-          >
-            Rotate
-          </button>
-          <div className="tetris__game-controls">
-            <button className="btn" onClick={() => this.handleNewGameClick()}>
-              New Game
-            </button>
-            <button className="btn" onClick={() => this.handlePauseClick()}>
-              {this.state.isPaused ? "Resume" : "Pause"}
-            </button>
-          </div>
         </div>
       </div>
     );
