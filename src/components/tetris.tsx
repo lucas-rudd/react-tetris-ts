@@ -1,4 +1,5 @@
 import * as React from "react";
+import { merge } from "lodash";
 import TetrisBoard from "./board";
 import initalTileState from "../constants/defaultBoard.json";
 
@@ -22,6 +23,11 @@ type TetrisState = {
   keyId?: number;
   tiles: number[][][][];
 };
+
+type TetrominoLocation = Pick<
+  TetrisState,
+  "field" | "activeTileX" | "activeTileY" | "tileRotate" | "activeTile"
+>;
 
 type ValidKeys =
   | "left"
@@ -185,71 +191,73 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       field[y + tiles[tile][rotate][1][1]][x + tiles[tile][rotate][1][0]] = 0;
       field[y + tiles[tile][rotate][2][1]][x + tiles[tile][rotate][2][0]] = 0;
       field[y + tiles[tile][rotate][3][1]][x + tiles[tile][rotate][3][0]] = 0;
-      x = this.moveX({ ...this.state, xAdd });
-      rotate = this.rotate({ ...this.state, activeTileX: x, rotateAdd });
       let newY = y;
+      let newLocation: TetrominoLocation = {
+        field,
+        activeTileX: x,
+        activeTileY: newY,
+        tileRotate: rotate,
+        activeTile: tile
+      };
+      newLocation = merge({}, newLocation, this.moveX({ ...this.state, xAdd }));
+      newLocation = this.rotate({
+        ...this.state,
+        ...newLocation,
+        rotateAdd
+      });
+
       if (command === "space") {
         do {
           newY++;
         } while (
           this.isValidFall({
             ...this.state,
-            activeTileX: x,
-            activeTileY: newY,
-            tileRotate: rotate,
+            ...{ ...newLocation, activeTileY: newY },
             yAdd,
             index: 0
           }) &&
           this.isValidFall({
             ...this.state,
-            field,
-            activeTileX: x,
-            activeTileY: newY,
-            tileRotate: rotate,
+            ...{ ...newLocation, activeTileY: newY },
             yAdd,
             index: 1
           }) &&
           this.isValidFall({
             ...this.state,
-            field,
-            activeTileX: x,
-            activeTileY: newY,
-            tileRotate: rotate,
+            ...{ ...newLocation, activeTileY: newY },
             yAdd,
             index: 2
           }) &&
           this.isValidFall({
             ...this.state,
-            field,
-            activeTileX: x,
-            activeTileY: newY,
-            tileRotate: rotate,
+            ...{ ...newLocation, activeTileY: newY },
             yAdd,
             index: 3
           })
         );
-        newY = this.moveY({
-          ...this.state,
-          activeTileX: x,
-          activeTileY: newY,
-          tileRotate: rotate,
-          yAdd: newY - y
-        });
+        newLocation = merge(
+          {},
+          newLocation,
+          this.moveY({
+            ...this.state,
+            ...newLocation,
+            yAdd: newY - y
+          })
+        );
       } else {
-        newY = this.moveY({
-          ...this.state,
-          activeTileX: x,
-          tileRotate: rotate,
-          yAdd
-        });
-        //TODO: Manage state in only one location (here) instead of also in the `moveY` method
-        this.setState({
-          field: field,
-          activeTileX: x,
-          activeTileY: newY,
-          tileRotate: rotate
-        });
+        newLocation = merge(
+          {},
+          newLocation,
+          this.moveY({
+            ...this.state,
+            ...{ ...newLocation, activeTileY: newY },
+            yAdd
+          })
+        );
       }
+      console.log("NEW LOCATION", newLocation);
+      //TODO: Manage state in only one location (here) instead of also in the `moveY` method
+      this.setState(newLocation);
     }
   }
 
@@ -293,7 +301,13 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     if (xAddIsValid) {
       x += xAdd;
     }
-    return x;
+    return {
+      field: field,
+      activeTileX: x,
+      activeTileY: y,
+      tileRotate: rotate,
+      activeTile: tile
+    };
   };
 
   //TODO: return type of tetromino position to manage state in only one location
@@ -305,7 +319,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     tiles,
     activeTileX: x,
     activeTileY: y
-  }: TetrisState & { yAdd: number }) => {
+  }: TetrisState & { yAdd: number }): TetrominoLocation => {
     let yAddIsValid = true;
 
     // Test if tile should fall faster
@@ -436,7 +450,13 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
         activeTile: tile
       });
     }
-    return y;
+    return {
+      field,
+      activeTileX: x,
+      activeTileY: y,
+      tileRotate: rotate,
+      activeTile: tile
+    };
   };
 
   rotate = ({
@@ -481,7 +501,13 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     if (rotateIsValid) {
       rotate = newRotate;
     }
-    return rotate;
+    return {
+      field,
+      activeTileX: x,
+      activeTileY: y,
+      tileRotate: rotate,
+      activeTile: tile
+    };
   };
 
   isValidFall = ({
@@ -513,12 +539,10 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
           x + tiles[tile][rotate][index][0]
         ] !== 0
       ) {
-        console.log("BLOCKED BY OTHER TILES?");
         // Prevent faster fall
         yAddIsValid = false;
       }
     } else {
-      console.log("BLOCKED BY THE BOARD");
       // Prevent faster fall
       yAddIsValid = false;
     }
