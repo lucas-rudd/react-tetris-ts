@@ -1,7 +1,6 @@
 import * as React from "react";
 import TetrisBoard from "./board";
 import initalTileState from "../constants/defaultBoard.json";
-import { tsThisType } from "@babel/types";
 
 type TetrisProps = {
   boardWidth: any;
@@ -126,11 +125,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
    * @memberof Tetris
    */
   handleBoardUpdate(command: string) {
-    if (
-      (!this.state.gameOver && !this.state.isPaused) ||
-      command === "p" ||
-      command === "space"
-    ) {
+    if ((!this.state.gameOver && !this.state.isPaused) || command === "p") {
       let xAdd = 0;
       let yAdd = 0;
       let rotateAdd = 0;
@@ -162,6 +157,10 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
           this.handleNewGameClick();
           break;
         }
+        case "space": {
+          yAdd = 1;
+          break;
+        }
       }
 
       let field = this.state.field;
@@ -173,205 +172,249 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       field[y + tiles[tile][rotate][1][1]][x + tiles[tile][rotate][1][0]] = 0;
       field[y + tiles[tile][rotate][2][1]][x + tiles[tile][rotate][2][0]] = 0;
       field[y + tiles[tile][rotate][3][1]][x + tiles[tile][rotate][3][0]] = 0;
+      x = this.moveX({ ...this.state, xAdd });
+      rotate = this.rotate({ ...this.state, activeTileX: x, rotateAdd });
+      let newY = y;
+      if (command === "space") {
+        do {
+          newY++;
+        } while (
+          this.isValidFall({
+            ...this.state,
+            activeTileX: x,
+            activeTileY: newY,
+            tileRotate: rotate,
+            yAdd,
+            index: 0
+          }) &&
+          this.isValidFall({
+            ...this.state,
+            field,
+            activeTileX: x,
+            activeTileY: newY,
+            tileRotate: rotate,
+            yAdd,
+            index: 1
+          }) &&
+          this.isValidFall({
+            ...this.state,
+            field,
+            activeTileX: x,
+            activeTileY: newY,
+            tileRotate: rotate,
+            yAdd,
+            index: 2
+          }) &&
+          this.isValidFall({
+            ...this.state,
+            field,
+            activeTileX: x,
+            activeTileY: newY,
+            tileRotate: rotate,
+            yAdd,
+            index: 3
+          })
+        );
+        newY = this.moveY({
+          ...this.state,
+          activeTileX: x,
+          activeTileY: newY,
+          tileRotate: rotate,
+          yAdd: newY - y
+        });
+      } else {
+        newY = this.moveY({
+          ...this.state,
+          activeTileX: x,
+          tileRotate: rotate,
+          yAdd
+        });
+        //TODO: Manage state in only one location (here) instead of also in the `moveY` method
+        this.setState({
+          field: field,
+          activeTileX: x,
+          activeTileY: newY,
+          tileRotate: rotate
+        });
+      }
+    }
+  }
 
-      let xAddIsValid = true;
+  moveX = ({
+    xAdd,
+    field,
+    activeTile: tile,
+    tileRotate: rotate,
+    tiles,
+    activeTileX: x,
+    activeTileY: y
+  }: TetrisState & { xAdd: number }) => {
+    field[y + tiles[tile][rotate][0][1]][x + tiles[tile][rotate][0][0]] = 0;
+    field[y + tiles[tile][rotate][1][1]][x + tiles[tile][rotate][1][0]] = 0;
+    field[y + tiles[tile][rotate][2][1]][x + tiles[tile][rotate][2][0]] = 0;
+    field[y + tiles[tile][rotate][3][1]][x + tiles[tile][rotate][3][0]] = 0;
 
-      if (xAdd !== 0) {
-        for (let i = 0; i <= 3; i++) {
+    let xAddIsValid = true;
+
+    if (xAdd !== 0) {
+      for (let i = 0; i <= 3; i++) {
+        if (
+          x + xAdd + tiles[tile][rotate][i][0] >= 0 &&
+          x + xAdd + tiles[tile][rotate][i][0] < this.props.boardWidth
+        ) {
           if (
-            x + xAdd + tiles[tile][rotate][i][0] >= 0 &&
-            x + xAdd + tiles[tile][rotate][i][0] < this.props.boardWidth
+            field[y + tiles[tile][rotate][i][1]][
+              x + xAdd + tiles[tile][rotate][i][0]
+            ] !== 0
           ) {
-            if (
-              field[y + tiles[tile][rotate][i][1]][
-                x + xAdd + tiles[tile][rotate][i][0]
-              ] !== 0
-            ) {
-              // Prevent the move
-              xAddIsValid = false;
-            }
-          } else {
             // Prevent the move
             xAddIsValid = false;
           }
-        }
-      }
-
-      if (xAddIsValid) {
-        x += xAdd;
-      }
-
-      let newRotate = rotate + rotateAdd > 3 ? 0 : rotate + rotateAdd;
-      let rotateIsValid = true;
-
-      // Test if tile should rotate
-      if (rotateAdd !== 0) {
-        for (let i = 0; i <= 3; i++) {
-          // Test if tile can be rotated without getting outside the board
-          if (
-            x + tiles[tile][newRotate][i][0] >= 0 &&
-            x + tiles[tile][newRotate][i][0] < this.props.boardWidth &&
-            y + tiles[tile][newRotate][i][1] >= 0 &&
-            y + tiles[tile][newRotate][i][1] < this.props.boardHeight
-          ) {
-            // Test of tile rotation is not blocked by other tiles
-            if (
-              field[y + tiles[tile][newRotate][i][1]][
-                x + tiles[tile][newRotate][i][0]
-              ] !== 0
-            ) {
-              // Prevent rotation
-              rotateIsValid = false;
-            }
-          } else {
-            // Prevent rotation
-            rotateIsValid = false;
-          }
-        }
-      }
-
-      // If rotation is valid update rotate variable (rotate the tile)
-      if (rotateIsValid) {
-        rotate = newRotate;
-      }
-      let yAddIsValid = true;
-
-      // Test if tile should fall faster
-      if (yAdd !== 0) {
-        for (let i = 0; i <= 3; i++) {
-          // Test if tile can fall faster without getting outside the board
-          if (
-            y + yAdd + tiles[tile][rotate][i][1] >= 0 &&
-            y + yAdd + tiles[tile][rotate][i][1] < this.props.boardHeight
-          ) {
-            // Test if faster fall is not blocked by other tiles
-            if (
-              field[y + yAdd + tiles[tile][rotate][i][1]][
-                x + tiles[tile][rotate][i][0]
-              ] !== 0
-            ) {
-              // Prevent faster fall
-              yAddIsValid = false;
-            }
-          } else {
-            // Prevent faster fall
-            yAddIsValid = false;
-          }
-        }
-      }
-
-      // If speeding up the fall is valid (move the tile down faster)
-      if (yAddIsValid) {
-        y += yAdd;
-      }
-
-      // Render the tile at new position
-      field[y + tiles[tile][rotate][0][1]][
-        x + tiles[tile][rotate][0][0]
-      ] = tile;
-      field[y + tiles[tile][rotate][1][1]][
-        x + tiles[tile][rotate][1][0]
-      ] = tile;
-      field[y + tiles[tile][rotate][2][1]][
-        x + tiles[tile][rotate][2][0]
-      ] = tile;
-      field[y + tiles[tile][rotate][3][1]][
-        x + tiles[tile][rotate][3][0]
-      ] = tile;
-
-      // If moving down is not possible, remove completed rows add score
-      // and find next tile and check if game is over
-      if (!yAddIsValid) {
-        for (let row = this.props.boardHeight - 1; row >= 0; row--) {
-          let isLineComplete = true;
-
-          // Check if row is completed
-          for (let col = 0; col < this.props.boardWidth; col++) {
-            if (field[row][col] === 0) {
-              isLineComplete = false;
-            }
-          }
-
-          // Remove completed rows
-          if (isLineComplete) {
-            for (let yRowSrc = row; row > 0; row--) {
-              for (let col = 0; col < this.props.boardWidth; col++) {
-                field[row][col] = field[row - 1][col];
-              }
-            }
-
-            // Check if the row is the last
-            row = this.props.boardHeight;
-          }
-        }
-
-        // Update state - update score, update number of tiles, change level
-        this.setState(prev => ({
-          score: prev.score + 1 * prev.level,
-          tileCount: prev.tileCount + 1,
-          level: 1 + Math.floor(prev.tileCount / 10)
-        }));
-
-        // Prepare new timer
-        let timerId;
-
-        // Reset the timer
-        window.clearInterval(this.state.timerId);
-
-        // Update new timer
-        timerId = window.setInterval(
-          () => this.handleBoardUpdate("down"),
-          1000 - (this.state.level * 10 > 600 ? 600 : this.state.level * 10)
-        );
-
-        // Use new timer
-        this.setState({
-          timerId
-        });
-
-        // Create new tile
-        tile = Math.floor(Math.random() * 7 + 1);
-        x = parseInt(this.props.boardWidth) / 2;
-        y = 1;
-        rotate = 0;
-
-        // Test if game is over - test if new tile can't be placed in field
-        if (
-          field[y + tiles[tile][rotate][0][1]][
-            x + tiles[tile][rotate][0][0]
-          ] !== 0 ||
-          field[y + tiles[tile][rotate][1][1]][
-            x + tiles[tile][rotate][1][0]
-          ] !== 0 ||
-          field[y + tiles[tile][rotate][2][1]][
-            x + tiles[tile][rotate][2][0]
-          ] !== 0 ||
-          field[y + tiles[tile][rotate][3][1]][
-            x + tiles[tile][rotate][3][0]
-          ] !== 0
-        ) {
-          // Stop the game
-          this.setState({
-            gameOver: true
-          });
         } else {
-          // Otherwise, render new tile and continue
-          field[y + tiles[tile][rotate][0][1]][
-            x + tiles[tile][rotate][0][0]
-          ] = tile;
-          field[y + tiles[tile][rotate][1][1]][
-            x + tiles[tile][rotate][1][0]
-          ] = tile;
-          field[y + tiles[tile][rotate][2][1]][
-            x + tiles[tile][rotate][2][0]
-          ] = tile;
-          field[y + tiles[tile][rotate][3][1]][
-            x + tiles[tile][rotate][3][0]
-          ] = tile;
+          // Prevent the move
+          xAddIsValid = false;
+        }
+      }
+    }
+
+    if (xAddIsValid) {
+      x += xAdd;
+    }
+    return x;
+  };
+
+  //TODO: return type of tetromino position to manage state in only one location
+  moveY = ({
+    yAdd,
+    field,
+    activeTile: tile,
+    tileRotate: rotate,
+    tiles,
+    activeTileX: x,
+    activeTileY: y
+  }: TetrisState & { yAdd: number }) => {
+    let yAddIsValid = true;
+
+    // Test if tile should fall faster
+    if (yAdd !== 0) {
+      for (let i = 0; i <= 3; i++) {
+        // Test if tile can fall faster without getting outside the board
+        if (
+          !this.isValidFall({
+            yAdd,
+            field,
+            activeTile: tile,
+            tileRotate: rotate,
+            activeTileX: x,
+            activeTileY: y,
+            tiles,
+            index: i
+          })
+        ) {
+          // Prevent faster fall
+          yAddIsValid = false;
+        }
+      }
+    }
+
+    // If speeding up the fall is valid (move the tile down faster)
+    if (yAddIsValid) {
+      y += yAdd;
+    }
+
+    // Render the tile at new position
+    field[y + tiles[tile][rotate][0][1]][x + tiles[tile][rotate][0][0]] = tile;
+    field[y + tiles[tile][rotate][1][1]][x + tiles[tile][rotate][1][0]] = tile;
+    field[y + tiles[tile][rotate][2][1]][x + tiles[tile][rotate][2][0]] = tile;
+    field[y + tiles[tile][rotate][3][1]][x + tiles[tile][rotate][3][0]] = tile;
+
+    // If moving down is not possible, remove completed rows add score
+    // and find next tile and check if game is over
+    if (!yAddIsValid) {
+      for (let row = this.props.boardHeight - 1; row >= 0; row--) {
+        let isLineComplete = true;
+
+        // Check if row is completed
+        for (let col = 0; col < this.props.boardWidth; col++) {
+          if (field[row][col] === 0) {
+            isLineComplete = false;
+          }
+        }
+
+        // Remove completed rows
+        if (isLineComplete) {
+          for (let yRowSrc = row; row > 0; row--) {
+            for (let col = 0; col < this.props.boardWidth; col++) {
+              field[row][col] = field[row - 1][col];
+            }
+          }
+
+          // Check if the row is the last
+          row = this.props.boardHeight;
         }
       }
 
-      // Update state - use new field, active x/y coordinates, rotation and activeTile
+      // Update state - update score, update number of tiles, change level
+      this.setState(prev => ({
+        score: prev.score + 1 * prev.level,
+        tileCount: prev.tileCount + 1,
+        level: 1 + Math.floor(prev.tileCount / 10)
+      }));
+
+      // Prepare new timer
+      let timerId;
+
+      // Reset the timer
+      window.clearInterval(this.state.timerId);
+
+      // Update new timer
+      timerId = window.setInterval(
+        () => this.handleBoardUpdate("down"),
+        1000 - (this.state.level * 10 > 600 ? 600 : this.state.level * 10)
+      );
+
+      // Use new timer
+      this.setState({
+        timerId
+      });
+
+      // TODO: I think the problem lies here
+      // Create new tile
+      tile = Math.floor(Math.random() * 7 + 1);
+      x = parseInt(this.props.boardWidth) / 2;
+      y = 1;
+      rotate = 0;
+
+      // Test if game is over - test if new tile can't be placed in field
+      if (
+        field[y + tiles[tile][rotate][0][1]][x + tiles[tile][rotate][0][0]] !==
+          0 ||
+        field[y + tiles[tile][rotate][1][1]][x + tiles[tile][rotate][1][0]] !==
+          0 ||
+        field[y + tiles[tile][rotate][2][1]][x + tiles[tile][rotate][2][0]] !==
+          0 ||
+        field[y + tiles[tile][rotate][3][1]][x + tiles[tile][rotate][3][0]] !==
+          0
+      ) {
+        // Stop the game
+        this.setState({
+          gameOver: true
+        });
+      } else {
+        // Otherwise, render new tile and continue
+        field[y + tiles[tile][rotate][0][1]][
+          x + tiles[tile][rotate][0][0]
+        ] = tile;
+        field[y + tiles[tile][rotate][1][1]][
+          x + tiles[tile][rotate][1][0]
+        ] = tile;
+        field[y + tiles[tile][rotate][2][1]][
+          x + tiles[tile][rotate][2][0]
+        ] = tile;
+        field[y + tiles[tile][rotate][3][1]][
+          x + tiles[tile][rotate][3][0]
+        ] = tile;
+      }
       this.setState({
         field: field,
         activeTileX: x,
@@ -380,7 +423,94 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
         activeTile: tile
       });
     }
-  }
+    return y;
+  };
+
+  rotate = ({
+    rotateAdd,
+    field,
+    activeTile: tile,
+    tileRotate: rotate,
+    tiles,
+    activeTileX: x,
+    activeTileY: y
+  }: TetrisState & { rotateAdd: number }) => {
+    let newRotate = rotate + rotateAdd > 3 ? 0 : rotate + rotateAdd;
+    let rotateIsValid = true;
+
+    // Test if tile should rotate
+    if (rotateAdd !== 0) {
+      for (let i = 0; i <= 3; i++) {
+        // Test if tile can be rotated without getting outside the board
+        if (
+          x + tiles[tile][newRotate][i][0] >= 0 &&
+          x + tiles[tile][newRotate][i][0] < this.props.boardWidth &&
+          y + tiles[tile][newRotate][i][1] >= 0 &&
+          y + tiles[tile][newRotate][i][1] < this.props.boardHeight
+        ) {
+          // Test of tile rotation is not blocked by other tiles
+          if (
+            field[y + tiles[tile][newRotate][i][1]][
+              x + tiles[tile][newRotate][i][0]
+            ] !== 0
+          ) {
+            // Prevent rotation
+            rotateIsValid = false;
+          }
+        } else {
+          // Prevent rotation
+          rotateIsValid = false;
+        }
+      }
+    }
+
+    // If rotation is valid update rotate variable (rotate the tile)
+    if (rotateIsValid) {
+      rotate = newRotate;
+    }
+    return rotate;
+  };
+
+  isValidFall = ({
+    yAdd,
+    field,
+    activeTile: tile,
+    tileRotate: rotate,
+    tiles,
+    activeTileX: x,
+    activeTileY: y,
+    index
+  }: Pick<
+    TetrisState,
+    | "tileRotate"
+    | "activeTile"
+    | "tiles"
+    | "activeTileX"
+    | "activeTileY"
+    | "field"
+  > & { yAdd: number; index: number }) => {
+    let yAddIsValid = true;
+    if (
+      y + yAdd + tiles[tile][rotate][index][1] >= 0 &&
+      y + yAdd + tiles[tile][rotate][index][1] < this.props.boardHeight
+    ) {
+      // Test if faster fall is not blocked by other tiles
+      if (
+        field[y + yAdd + tiles[tile][rotate][index][1]][
+          x + tiles[tile][rotate][index][0]
+        ] !== 0
+      ) {
+        console.log("BLOCKED BY OTHER TILES?");
+        // Prevent faster fall
+        yAddIsValid = false;
+      }
+    } else {
+      console.log("BLOCKED BY THE BOARD");
+      // Prevent faster fall
+      yAddIsValid = false;
+    }
+    return yAddIsValid;
+  };
 
   handlePauseClick = () => {
     this.setState(prev => ({
