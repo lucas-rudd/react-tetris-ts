@@ -23,7 +23,15 @@ type TetrisState = {
   tiles: number[][][][];
 };
 
-type ValidKeys = "left" | "rotate" | "right" | "down" | "space" | "r" | "p";
+type ValidKeys =
+  | "left"
+  | "rotate"
+  | "right"
+  | "down"
+  | "space"
+  | "r"
+  | "p"
+  | "n";
 
 class Tetris extends React.Component<TetrisProps, TetrisState> {
   constructor(props: TetrisProps) {
@@ -59,6 +67,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       39: "right",
       40: "down",
       32: "space",
+      78: "n",
       83: "s",
       82: "r",
       80: "p"
@@ -75,7 +84,11 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       const type = keyboard[e.keyCode] as ValidKeys;
       keydownActive = type;
 
-      this.handleBoardUpdate(keydownActive);
+      if (keydownActive === "n") {
+        this.handleNewGameClick();
+      } else {
+        this.handleBoardUpdate(keydownActive);
+      }
     };
 
     const keyUp = (e: KeyboardEvent) => {
