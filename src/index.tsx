@@ -6,7 +6,12 @@ import "./styles/styles.css";
 import * as serviceWorker from "./serviceWorker";
 
 ReactDOM.render(
-  <Tetris boardWidth="14" boardHeight="20" />,
+  <Tetris
+    boardWidth={14}
+    boardHeight={20}
+    holdingHeight={5}
+    holdingWidth={5}
+  />,
   document.getElementById("root")
 );
 

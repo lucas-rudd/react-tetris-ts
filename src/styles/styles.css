@@ -13,7 +13,7 @@ html {
 .tetris {
   padding: 8px;
   margin: 0 auto;
-  width: 500px;
+  width: 600px;
 }
 
 .tetris-board {
@@ -25,12 +25,25 @@ html {
   width: 100px;
 }
 
+.tetris-board__holding-column {
+  width: 100px;
+}
+
+.holding-column {
+  margin-left: 2px;
+  margin-right: 2px;
+  border: 1px #020202;
+  height: 104px;
+  width: 104px;
+}
+
 .tetris-board__text {
   font-size: 18px;
   color: #111;
 }
 
-.tetris-board__row {
+.tetris-board__row,
+.tetris-board__holding-row {
   display: flex;
 }
 
@@ -40,37 +53,49 @@ html {
   border: 1px solid #1a1c19;
 }
 
+[class*="holding__col-"] {
+  padding: 12px;
+  border: 1px solid #1a1c19;
+}
+
 /* Default (empty) board column */
-.col-0 {
+.col-0,
+.holding__col-0 {
   background-color: #020202;
 }
 
 /* Colors for tiles */
-.col-1 {
+.col-1,
+.holding__col-1 {
   background-color: #f21620;
 }
 
-.col-2 {
+.col-2 .holding__col-2 {
   background-color: #10ac84;
 }
 
-.col-3 {
+.col-3,
+.holding__col-3 {
   background-color: #5f27cd;
 }
 
-.col-4 {
+.col-4,
+.holding__col-4 {
   background-color: #d925cf;
 }
 
-.col-5 {
+.col-5,
+.holding__col-5 {
   background-color: #48dbfb;
 }
 
-.col-6 {
+.col-6,
+.holding__col-6 {
   background-color: #fd4964;
 }
 
-.col-7 {
+.col-7,
+.holding__col-7 {
   background-color: #72fa4e;
 }
 
