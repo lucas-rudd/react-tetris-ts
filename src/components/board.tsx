@@ -1,25 +1,34 @@
-import * as React from 'react'
-
+import * as React from "react";
+import HoldingColumn from "./holdingColumn";
 // Define props for TetrisBoard component
 type TetrisBoardProps = {
-  field: any[],
-  gameOver: boolean,
-  score: number,
-  level: number,
-  rotate: number
-}
+  field: any[];
+  gameOver: boolean;
+  score: number;
+  level: number;
+  tiles: number[][][][];
+  holdingTile: number;
+  holdingHeight: number;
+  holdingWidth: number;
+};
 
 // Create TetrisBoard component
-const TetrisBoard: React.FC<TetrisBoardProps> = (props) => {
+const TetrisBoard: React.FC<TetrisBoardProps> = props => {
   // Create board rows
-  let rows: any[] = []
+  let rows: any[] = [];
 
   props.field.forEach((row, index) => {
     // Create board columns
-    const cols = row.map((column: any, index: number) => <div className={`col-${column}`} key={index} />)
+    const cols = row.map((column: any, index: number) => (
+      <div className={`col-${column}`} key={index} />
+    ));
 
-    rows.push(<div className="tetris-board__row" key={index}>{cols}</div>)
-  })
+    rows.push(
+      <div className="tetris-board__row" key={index}>
+        {cols}
+      </div>
+    );
+  });
 
   return (
     <div className="tetris-board">
@@ -29,13 +38,27 @@ const TetrisBoard: React.FC<TetrisBoardProps> = (props) => {
 
         <p className="tetris-board__text">Score: {props.score}</p>
 
-        {props.gameOver && <p className="tetris-board__text"><strong>Game Over</strong></p>}
+        {props.gameOver && (
+          <p className="tetris-board__text">
+            <strong>Game Over</strong>
+          </p>
+        )}
       </div>
 
       {/* Game board */}
-      <div id="tetris-board__board" className="tetris-board__board">{rows}</div>
+      <div id="tetris-board__board" className="tetris-board__board">
+        {rows}
+      </div>
+      <div className="tetris-board__holding-column">
+        <HoldingColumn
+          holdingTile={props.holdingTile}
+          holdingHeight={props.holdingHeight}
+          holdingWidth={props.holdingWidth}
+          tiles={props.tiles}
+        />
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default TetrisBoard
+export default TetrisBoard;

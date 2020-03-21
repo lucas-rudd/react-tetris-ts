@@ -2,32 +2,14 @@ import * as React from "react";
 import { merge } from "lodash";
 import TetrisBoard from "./board";
 import initalTileState from "../constants/defaultBoard.json";
+import { TetrisState, TetrominoLocation } from "../types";
 
 type TetrisProps = {
-  boardWidth: any;
-  boardHeight: any;
+  boardWidth: number;
+  boardHeight: number;
+  holdingHeight: number;
+  holdingWidth: number;
 };
-
-type TetrisState = {
-  activeTileX: number;
-  activeTileY: number;
-  activeTile: number;
-  tileRotate: number;
-  score: number;
-  level: number;
-  tileCount: number;
-  gameOver: boolean;
-  isPaused: boolean;
-  field: any[];
-  timerId?: number;
-  keyId?: number;
-  tiles: number[][][][];
-};
-
-type TetrominoLocation = Pick<
-  TetrisState,
-  "field" | "activeTileX" | "activeTileY" | "tileRotate" | "activeTile"
->;
 
 type ValidKeys =
   | "left"
@@ -37,6 +19,7 @@ type ValidKeys =
   | "space"
   | "r"
   | "p"
+  | "shift"
   | "n";
 
 class Tetris extends React.Component<TetrisProps, TetrisState> {
@@ -51,7 +34,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       }
       field.push(row);
     }
-    let xStart = Math.floor(parseInt(props.boardWidth) / 2);
+    let xStart = Math.floor(props.boardWidth / 2);
 
     this.state = {
       activeTileX: xStart,
@@ -68,11 +51,12 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       tiles: initalTileState
     };
     const keyboard: { [key: number]: string } = {
+      16: "shift",
+      32: "space",
       37: "left",
       38: "rotate",
       39: "right",
       40: "down",
-      32: "space",
       78: "n",
       83: "s",
       82: "r",
@@ -92,6 +76,8 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
 
       if (keydownActive === "n") {
         this.handleNewGameClick();
+      } else if (keydownActive === "shift") {
+        this.handleHoldPiece(this.state.activeTile);
       } else {
         this.handleBoardUpdate(keydownActive);
       }
@@ -115,8 +101,6 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
   setControlsWidth() {
     let board = document.getElementById("tetris-board__board");
     let controls = document.getElementById("tetris__game-controls");
-    console.log("BOARD", board);
-    console.log("CONTROLS", controls);
     if (board && controls) {
       const style = window.getComputedStyle(board);
       const wdt = style.getPropertyValue("width");
@@ -151,6 +135,55 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     window.clearInterval(this.state.timerId);
   }
 
+  handleHoldPiece(tile: number) {
+    /**
+     *  TODO: check that placement is valid before rendering,
+     *  move it over accordingly until it is in a valid placement
+     *  before moving he held piece into the game.
+     * */
+    const { holdingTile, tileRotate } = this.state;
+    const { field, tiles, activeTileY: y, activeTileX: x } = this.state;
+    // remove old tile
+    field[y + tiles[tile][tileRotate][0][1]][
+      x + tiles[tile][tileRotate][0][0]
+    ] = 0;
+    field[y + tiles[tile][tileRotate][1][1]][
+      x + tiles[tile][tileRotate][1][0]
+    ] = 0;
+    field[y + tiles[tile][tileRotate][2][1]][
+      x + tiles[tile][tileRotate][2][0]
+    ] = 0;
+    field[y + tiles[tile][tileRotate][3][1]][
+      x + tiles[tile][tileRotate][3][0]
+    ] = 0;
+    if (holdingTile) {
+      // render new tile
+      field[y + tiles[holdingTile][tileRotate][0][1]][
+        x + tiles[holdingTile][tileRotate][0][0]
+      ] = holdingTile;
+      field[y + tiles[holdingTile][tileRotate][1][1]][
+        x + tiles[holdingTile][tileRotate][1][0]
+      ] = holdingTile;
+      field[y + tiles[holdingTile][tileRotate][2][1]][
+        x + tiles[holdingTile][tileRotate][2][0]
+      ] = holdingTile;
+      field[y + tiles[holdingTile][tileRotate][3][1]][
+        x + tiles[holdingTile][tileRotate][3][0]
+      ] = holdingTile;
+      this.setState({
+        field,
+        activeTile: holdingTile,
+        holdingTile: tile
+      });
+    } else {
+      this.setState({
+        field,
+        holdingTile: tile,
+        activeTile: Math.floor(Math.random() * 7 + 1)
+      });
+    }
+  }
+
   /**
    * @description Handles board updates
    * @param {string} command
@@ -183,10 +216,6 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
         }
         case "p": {
           this.handlePauseClick();
-          break;
-        }
-        case "n": {
-          this.handleNewGameClick();
           break;
         }
         case "space": {
@@ -415,10 +444,9 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
         timerId
       });
 
-      // TODO: I think the problem lies here
       // Create new tile
       tile = Math.floor(Math.random() * 7 + 1);
-      x = parseInt(this.props.boardWidth) / 2;
+      x = this.props.boardWidth / 2;
       y = 1;
       rotate = 0;
 
@@ -578,7 +606,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     }
 
     // Set starting column to center
-    let xStart = Math.floor(parseInt(this.props.boardWidth) / 2);
+    let xStart = Math.floor(this.props.boardWidth / 2);
 
     // Initialize state with starting conditions
     this.setState({
@@ -602,7 +630,10 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
           gameOver={this.state.gameOver}
           score={this.state.score}
           level={this.state.level}
-          rotate={this.state.tileRotate}
+          tiles={this.state.tiles}
+          holdingWidth={this.props.holdingWidth}
+          holdingHeight={this.props.holdingHeight}
+          holdingTile={this.state.holdingTile || 0}
         />
         <div id="tetris__game-controls" className="tetris__game-controls">
           <button className="btn" onClick={() => this.handleNewGameClick()}>
