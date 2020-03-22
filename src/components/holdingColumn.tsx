@@ -1,5 +1,4 @@
 import * as React from "react";
-import { TetrominoLocation } from "../types";
 // Define props for TetrisBoard component
 type HoldingColumnProps = {
   holdingTile: number;
@@ -8,7 +7,9 @@ type HoldingColumnProps = {
   tiles: number[][][][];
 };
 
-// Create TetrisBoard component
+// Create HoldingColumn component
+// TODO: always display tile vertically by rotation,
+// TODO: move tile over until it fits into place when swapped in
 const HoldingColumn: React.FC<HoldingColumnProps> = props => {
   let holdingRows: any[] = [];
   const field: number[][] = [];

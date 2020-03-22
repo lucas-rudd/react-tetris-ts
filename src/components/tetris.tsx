@@ -1,6 +1,7 @@
 import * as React from "react";
 import { merge } from "lodash";
 import TetrisBoard from "./board";
+import { isValidXMove } from "../utils";
 import initalTileState from "../constants/defaultBoard.json";
 import { TetrisState, TetrominoLocation } from "../types";
 
@@ -136,11 +137,6 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
   }
 
   handleHoldPiece(tile: number) {
-    /**
-     *  TODO: check that placement is valid before rendering,
-     *  move it over accordingly until it is in a valid placement
-     *  before moving he held piece into the game.
-     * */
     const { holdingTile, tileRotate } = this.state;
     const { field, tiles, activeTileY: y, activeTileX: x } = this.state;
     // remove old tile
@@ -157,24 +153,72 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       x + tiles[tile][tileRotate][3][0]
     ] = 0;
     if (holdingTile) {
-      // render new tile
-      field[y + tiles[holdingTile][tileRotate][0][1]][
-        x + tiles[holdingTile][tileRotate][0][0]
-      ] = holdingTile;
-      field[y + tiles[holdingTile][tileRotate][1][1]][
-        x + tiles[holdingTile][tileRotate][1][0]
-      ] = holdingTile;
-      field[y + tiles[holdingTile][tileRotate][2][1]][
-        x + tiles[holdingTile][tileRotate][2][0]
-      ] = holdingTile;
-      field[y + tiles[holdingTile][tileRotate][3][1]][
-        x + tiles[holdingTile][tileRotate][3][0]
-      ] = holdingTile;
-      this.setState({
-        field,
-        activeTile: holdingTile,
-        holdingTile: tile
-      });
+      /**
+       *  TODO: move the tile over accordingly until it is in a valid placement
+       * */
+      if (
+        isValidXMove({
+          ...this.state,
+          activeTile: holdingTile,
+          xAdd: 0,
+          boardWidth: this.props.boardWidth,
+          index: 0
+        }) &&
+        isValidXMove({
+          ...this.state,
+          activeTile: holdingTile,
+          xAdd: 0,
+          boardWidth: this.props.boardWidth,
+          index: 1
+        }) &&
+        isValidXMove({
+          ...this.state,
+          activeTile: holdingTile,
+          xAdd: 0,
+          boardWidth: this.props.boardWidth,
+          index: 2
+        }) &&
+        isValidXMove({
+          ...this.state,
+          activeTile: holdingTile,
+          xAdd: 0,
+          boardWidth: this.props.boardWidth,
+          index: 3
+        })
+      ) {
+        // render new tile
+        field[y + tiles[holdingTile][tileRotate][0][1]][
+          x + tiles[holdingTile][tileRotate][0][0]
+        ] = holdingTile;
+        field[y + tiles[holdingTile][tileRotate][1][1]][
+          x + tiles[holdingTile][tileRotate][1][0]
+        ] = holdingTile;
+        field[y + tiles[holdingTile][tileRotate][2][1]][
+          x + tiles[holdingTile][tileRotate][2][0]
+        ] = holdingTile;
+        field[y + tiles[holdingTile][tileRotate][3][1]][
+          x + tiles[holdingTile][tileRotate][3][0]
+        ] = holdingTile;
+        this.setState({
+          field,
+          activeTile: holdingTile,
+          holdingTile: tile
+        });
+      } else {
+        // rerender old tile, piece not valid to be swapped in this location
+        field[y + tiles[tile][tileRotate][0][1]][
+          x + tiles[tile][tileRotate][0][0]
+        ] = tile;
+        field[y + tiles[tile][tileRotate][1][1]][
+          x + tiles[tile][tileRotate][1][0]
+        ] = tile;
+        field[y + tiles[tile][tileRotate][2][1]][
+          x + tiles[tile][tileRotate][2][0]
+        ] = tile;
+        field[y + tiles[tile][tileRotate][3][1]][
+          x + tiles[tile][tileRotate][3][0]
+        ] = tile;
+      }
     } else {
       this.setState({
         field,
@@ -320,18 +364,18 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     if (xAdd !== 0) {
       for (let i = 0; i <= 3; i++) {
         if (
-          x + xAdd + tiles[tile][rotate][i][0] >= 0 &&
-          x + xAdd + tiles[tile][rotate][i][0] < this.props.boardWidth
+          !isValidXMove({
+            activeTileX: x,
+            xAdd,
+            activeTile: tile,
+            activeTileY: y,
+            index: i,
+            tiles,
+            field,
+            tileRotate: rotate,
+            boardWidth: this.props.boardWidth
+          })
         ) {
-          if (
-            field[y + tiles[tile][rotate][i][1]][
-              x + xAdd + tiles[tile][rotate][i][0]
-            ] !== 0
-          ) {
-            // Prevent the move
-            xAddIsValid = false;
-          }
-        } else {
           // Prevent the move
           xAddIsValid = false;
         }
@@ -612,6 +656,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
     this.setState({
       activeTileX: xStart,
       activeTileY: 1,
+      holdingTile: 0,
       activeTile: 2,
       tileRotate: 0,
       score: 0,
