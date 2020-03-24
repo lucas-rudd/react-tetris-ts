@@ -16,9 +16,24 @@ html {
   width: 600px;
 }
 
+.image-container {
+  display: flex;
+  justify-content: center;
+}
+
 .tetris-board {
   display: flex;
   justify-content: space-between;
+}
+
+.tetris-board__img-board {
+  position: absolute;
+  z-index: -1;
+}
+
+.tetris-board__img-holding-column {
+  position: absolute;
+  z-index: -1;
 }
 
 .tetris-board__info {
@@ -61,7 +76,7 @@ html {
 /* Default (empty) board column */
 .col-0,
 .holding__col-0 {
-  background-color: #020202;
+  opacity: 0;
 }
 
 /* Colors for tiles */
@@ -70,7 +85,8 @@ html {
   background-color: #f21620;
 }
 
-.col-2 .holding__col-2 {
+.col-2,
+.holding__col-2 {
   background-color: #10ac84;
 }
 
@@ -104,7 +120,6 @@ html {
   margin-top: 16px;
   display: flex;
   float: right;
-  justify-content: center;
 }
 
 .tetris__game-controls {
