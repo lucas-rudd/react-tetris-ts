@@ -4,6 +4,7 @@ import TetrisBoard from "./board";
 import { isValidXMove } from "../utils";
 import initalTileState from "../constants/defaultBoard.json";
 import { TetrisState, TetrominoLocation } from "../types";
+import refreshButton from "../assets/refresh.png";
 
 type TetrisProps = {
   boardWidth: number;
@@ -681,9 +682,11 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
           holdingTile={this.state.holdingTile || 0}
         />
         <div id="tetris__game-controls" className="tetris__game-controls">
-          <button className="btn" onClick={() => this.handleNewGameClick()}>
-            New Game
-          </button>
+          <img
+            className="btn"
+            src={refreshButton}
+            onClick={() => this.handleNewGameClick()}
+          />
           <button className="btn" onClick={() => this.handlePauseClick()}>
             {this.state.isPaused ? "Resume" : "Pause"}
           </button>
