@@ -3,7 +3,14 @@ import { merge } from "lodash";
 import TetrisBoard from "./board";
 import { isValidXMove } from "../utils";
 import initalTileState from "../constants/defaultBoard.json";
-import { TetrisState, TetrominoLocation } from "../types";
+import GameMusic from "./GameMusic";
+import baseMusic from "../assets/twister-tetris.mp3";
+import fall from "../assets/fall.wav";
+import clear from "../assets/clear.wav";
+import gameOver from "../assets/game-over.mp3";
+import rotateSFX from "../assets/rotate.m4a";
+import { TetrisState, TetrominoLocation, MusicState } from "../types";
+
 import refreshButton from "../assets/refresh.png";
 
 type TetrisProps = {
@@ -50,7 +57,12 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
       isPaused: false,
       field: field,
       timerId: undefined,
-      tiles: initalTileState
+      tiles: initalTileState,
+      musicStatus: MusicState.PLAYING,
+      didTileFall: false,
+      isLineComplete: false,
+      rotationSoundComponents: [],
+      isRotating: false
     };
     const keyboard: { [key: number]: string } = {
       16: "shift",
@@ -292,6 +304,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
         ...newLocation,
         rotateAdd
       });
+      let didTileFall = false;
 
       if (command === "space") {
         do {
@@ -331,6 +344,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
             yAdd: newY - y
           })
         );
+        didTileFall = true;
       } else {
         newLocation = merge(
           {},
@@ -342,7 +356,7 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
           })
         );
       }
-      this.setState(newLocation);
+      this.setState({ ...newLocation, didTileFall });
     }
   }
 
@@ -462,6 +476,9 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
 
           // Check if the row is the last
           row = this.props.boardHeight;
+          this.setState({
+            isLineComplete
+          });
         }
       }
 
@@ -582,6 +599,38 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
 
     // If rotation is valid update rotate variable (rotate the tile)
     if (rotateIsValid) {
+      if (rotate !== newRotate) {
+        const rotateSounds = [...this.state.rotationSoundComponents];
+        /**
+         * TODO: THIS IS BROKEN
+         * Probably to do with the state getting updated
+         * when removing the Music, causing the component
+         * to re-render playing the already played components
+         *  */
+
+        rotateSounds.push(
+          <GameMusic
+            music={rotateSFX}
+            playStatus={MusicState.PLAYING}
+            isRotate={true}
+            loop={false}
+            onFinishedPlaying={() => {
+              const [
+                _,
+                ...newRotationSoundComponents
+              ] = this.state.rotationSoundComponents;
+              this.setState({
+                rotationSoundComponents: newRotationSoundComponents,
+                isRotating: rotateSounds.length !== 0
+              });
+            }}
+          />
+        );
+        this.setState({
+          rotationSoundComponents: rotateSounds,
+          isRotating: rotateSounds.length !== 0
+        });
+      }
       rotate = newRotate;
     }
     return {
@@ -634,7 +683,11 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
 
   handlePauseClick = () => {
     this.setState(prev => ({
-      isPaused: !prev.isPaused
+      isPaused: !prev.isPaused,
+      musicStatus:
+        prev.musicStatus === MusicState.PLAYING
+          ? MusicState.PAUSED
+          : MusicState.PLAYING
     }));
   };
 
@@ -671,6 +724,57 @@ class Tetris extends React.Component<TetrisProps, TetrisState> {
   render() {
     return (
       <div className="tetris">
+        {/* should I move all these game
+          components to a single `GameMusic` Component? 
+          Would likely look something like this
+          <GameMusic
+            gameOver={this.state.gameOver}
+            didTileFall={this.state.didTileFall}
+            isLineComplete={this.state.isLineComplete}
+            onFinishedFalling={() => this.setState({ didTileFall: false})}
+            onFinishedLineClear={() =>this.setState({ isLineComplete: false})}
+          />
+          then, that component would handle importing all the music, etc.
+          */}
+        {!this.state.gameOver && (
+          <GameMusic
+            music={baseMusic}
+            playStatus={this.state.musicStatus}
+            loop={true}
+          />
+        )}
+        {this.state.didTileFall && (
+          <GameMusic
+            music={fall}
+            playStatus={MusicState.PLAYING}
+            loop={false}
+            onFinishedPlaying={() =>
+              this.setState({
+                didTileFall: false
+              })
+            }
+          />
+        )}
+        {/* {this.state.isRotating && this.state.rotationSoundComponents} */}
+        {this.state.isLineComplete && (
+          <GameMusic
+            music={clear}
+            playStatus={MusicState.PLAYING}
+            loop={false}
+            onFinishedPlaying={() =>
+              this.setState({
+                isLineComplete: false
+              })
+            }
+          />
+        )}
+        {this.state.gameOver && (
+          <GameMusic
+            music={gameOver}
+            playStatus={MusicState.PLAYING}
+            loop={false}
+          />
+        )}
         <TetrisBoard
           field={this.state.field}
           gameOver={this.state.gameOver}

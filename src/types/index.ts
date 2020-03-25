@@ -1,3 +1,5 @@
+import * as React from "react";
+
 export type TetrisState = {
   activeTileX: number;
   activeTileY: number;
@@ -13,6 +15,19 @@ export type TetrisState = {
   keyId?: number;
   holdingTile?: number;
   tiles: number[][][][];
+  didTileFall: boolean;
+  musicStatus: MusicState;
+  isLineComplete: boolean;
+  rotationSoundComponents: React.ReactElement[];
+  isRotating: boolean;
+};
+
+export type MusicState = "PLAYING" | "STOPPED" | "PAUSED";
+
+export const MusicState: { [state in MusicState]: MusicState } = {
+  PLAYING: "PLAYING",
+  STOPPED: "STOPPED",
+  PAUSED: "PAUSED"
 };
 
 export type TetrominoLocation = Pick<
