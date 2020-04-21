@@ -37,8 +37,19 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-## Learn More
+## Gameplay
+The following actions are supported for gameplay
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Movement keys
+Move left, right and down with the arrow keys
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Rotation
+Rotate your piece with the `up` key
+
+### Piece storage
+Store your current piece with `shift`. If a piece is already stored, you will store your current piece, and the piece in storage will then become your current piece.
+
+You can store and retrieve as many times as you'd like.
+
+### Fast fall
+Press `spacebar` to fast fall your piece to the bottom
