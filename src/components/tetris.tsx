@@ -3,7 +3,7 @@ import { merge } from "lodash";
 import TetrisBoard from "./board";
 import { isValidXMove } from "../utils";
 import initalTileState from "../constants/defaultBoard.json";
-import GameMusic from "./GameMusic";
+import GameMusic from "./gameMusic";
 import baseMusic from "../assets/twister-tetris.mp3";
 import fall from "../assets/fall.wav";
 import clear from "../assets/clear.wav";

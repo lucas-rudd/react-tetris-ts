@@ -2,6 +2,7 @@
 html {
   box-sizing: border-box;
   font: 16px sans-serif;
+  overflow: hidden;
 }
 
 *,
